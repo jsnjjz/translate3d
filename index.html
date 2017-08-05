@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,initial-scale=1.0,user-scalable=no">
+	<title>Document</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+		}
+		html，body{ 
+			width:100%; 
+			height:100%; 
+		}
+		body {
+			background: grey
+		}
+		.wrap {
+			margin: 100px auto 0;
+			width: 400px;
+			height: 500px;
+			border: 1px solid #000;
+			font-size: 30px;
+		}
+		#listContent {
+			position: relative;
+			width: 400px;
+			height: 500px;
+			overflow: hidden;
+		}
+		#listContentUl { 
+			position:absolute; 
+			top:0; 
+			left:0; 
+			transform:translate3d(0,0,0);
+		}
+		#listContentUl li{ 
+			list-style:none; 
+			width: 400px;
+			height: 80px;
+			border-bottom: 1px solid grey;
+		}
+		
+	</style>
+	<script src="jquery-2.1.3.min.js"></script>
+	<script>
+		$(function (){
+			
+			var viewWidth = $(window).width();
+			var viewHeight = $(window).height();
+			var desWidth = 640;
+			var touchstart = 'touchstart';
+			var touchmove = 'touchmove';
+			var touchend = 'touchend';
+
+			var $listContent = $('#listContent');
+			var $listContentUl = $('#listContentUl');			
+
+			var downY = 0;
+			var prevY = 0;
+			var downT = 0;
+			var parentH = $listContent.height();
+			var childH = $listContentUl.height();
+			var onoff1 = true;
+			var onoff2 = true;
+			var timer = null;
+			var speed = 0;
+			
+		function device(){  
+			var isMobile = /Mobile/i.test(navigator.userAgent);
+			if(viewWidth > desWidth){
+				$listContent.css('width','640px');
+			}
+			if(!isMobile){
+				touchstart = 'mousedown';
+				touchmove = 'mousemove';
+				touchend = 'mouseup';
+			}
+		}
+
+		function moveScroll(){   
+			$(document).on(touchmove,function(ev){
+				ev.preventDefault();       //苹果手机滑动时 整个页面都滑动，阻止其默认事件
+			});        
+			$listContentUl.on(touchstart,function(ev){
+				if(parentH > childH){return false;}
+				var touch = ev.originalEvent.changedTouches ? ev.originalEvent.changedTouches[0] : ev;
+				var This = this;
+				downY = touch.pageY;
+				prevY = touch.pageY;
+				downT = $(this).position().top;
+				onoff1 = true;
+				onoff2 = true;
+				clearInterval(timer);
+				$(document).on(touchmove+'.move',function(ev){
+					var touch = ev.originalEvent.changedTouches ? ev.originalEvent.changedTouches[0] : ev;
+					var iTop = $(This).position().top;
+					
+					speed = touch.pageY - prevY;
+					prevY = touch.pageY;
+					
+					if(iTop >= 0){   
+						if(onoff1){
+							onoff1 = false;
+							downY = touch.pageY;
+						}
+						$(This).css('transform','translate3d(0,'+(touch.pageY - downY)/3+'px,0)');
+					}
+					else if(iTop <= parentH - childH){  
+						if(onoff2){
+							onoff2 = false;
+							downY = touch.pageY;
+						}
+						$(This).css('transform','translate3d(0,'+((touch.pageY - downY)/3 + (parentH - childH))+'px,0)');
+					}
+					else{
+						$(This).css('transform','translate3d(0,'+(touch.pageY - downY + downT)+'px,0)');
+					}
+					
+				});
+				$(document).on(touchend+'.move',function(){
+					$(this).off('.move');
+					
+					clearInterval(timer);
+					timer = setInterval(function(){
+						var iTop = $(This).position().top;
+						if(Math.abs(speed) <= 1 || iTop > 50 || iTop < parentH - childH - 50){
+							clearInterval(timer);
+							if(iTop >= 0){
+								$(This).css('transition','.2s');
+								$(This).css('transform','translate3d(0,0,0)');
+							}
+							else if(iTop <= parentH - childH){
+								$(This).css('transition','.2s');
+								$(This).css('transform','translate3d(0,'+(parentH - childH)+'px,0)');
+							}
+						}
+						else{
+							speed *= 0.9;
+							$(This).css('transform','translate3d(0,'+(iTop + speed)+'px,0)');
+						}
+						
+					},13);
+					
+				});
+				return false;
+			});
+			$listContentUl.on('transitonend webkitTransitionEnd',function(){
+				$(this).css('transition','');
+			});
+		}
+
+			device();
+			moveScroll();
+			
+			
+		})
+	</script>
+</head>
+<body>
+	<div class="wrap">
+		<div id="listContent">
+				<ul id="listContentUl">
+					<li style="background: hotpink; height: 50px">我是header</li>
+					<li style="background: yellowgreen; height: 600px">我是content</li>
+					<li style="background: aqua; height: 50px">我是footer</li>
+				</ul>
+		</div>
+	</div>
+</body>
+</html>
